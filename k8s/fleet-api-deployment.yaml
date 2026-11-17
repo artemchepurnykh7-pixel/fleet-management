@@ -1,0 +1,62 @@
+
+apiVersion: apps/v1
+kind: Deployment
+
+metadata:
+  name: fleet-api
+  labels:
+    app: fleet-api
+
+spec:
+  replicas: 1
+
+  selector:
+    matchLabels:
+      app: fleet-api
+
+  template:
+    metadata:
+      labels:
+        app: fleet-api
+
+    spec:
+      containers:
+        - name: fleet-api
+          image: fleet-management:1.0
+          imagePullPolicy: IfNotPresent
+
+          ports:
+            - containerPort: 8000
+              name: http
+
+          env:
+            - name: REDIS_HOST
+              value: "redis"
+            - name: REDIS_PORT
+              value: "6379"
+
+          resources:
+            requests:
+              memory: "128Mi"
+              cpu: "100m"
+            limits:
+              memory: "256Mi"
+              cpu: "500m"
+
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8000
+            initialDelaySeconds: 10
+            periodSeconds: 5
+            timeoutSeconds: 3
+            failureThreshold: 3
+
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 8000
+            initialDelaySeconds: 20
+            periodSeconds: 10
+            timeoutSeconds: 3
+            failureThreshold: 3

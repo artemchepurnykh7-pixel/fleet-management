@@ -1,0 +1,33 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: maintenance-check
+spec:
+  schedule: "*/1 * * * *"
+  concurrencyPolicy: Forbid
+  startingDeadlineSeconds: 30
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      backoffLimit: 1
+      activeDeadlineSeconds: 120
+      template:
+        spec:
+          restartPolicy: Never
+          containers:
+            - name: maintenance-check
+              image: fleet-management:1.2
+              imagePullPolicy: IfNotPresent
+              command:
+                - python
+                - -c
+                - |
+                  import urllib.request
+                  import time
+
+                  url = "http://fleet-api:8000/maintenance/check"
+                  request = urllib.request.Request(url, method="POST")
+                  response = urllib.request.urlopen(request, timeout=10)
+                  print(response.read().decode())
+                  time.sleep(75)
